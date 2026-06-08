@@ -1,1 +1,3 @@
-data
+data/
+run-pgsql.sh
+.env
