@@ -1,3 +1,4 @@
+.env
 data/
 run-pgsql.sh
-.env
+create-pgsql-users.sql
