@@ -1,6 +1,7 @@
 package com.rasirom.booking_service.controller;
 
 import com.rasirom.booking_service.dto.LoginRequest;
+import com.rasirom.booking_service.dto.LoginResponse;
 import com.rasirom.booking_service.dto.RegisterRequest;
 import com.rasirom.booking_service.model.User;
 import com.rasirom.booking_service.service.UserService;
@@ -22,6 +23,7 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User created = userService.register(request);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
@@ -31,8 +33,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            User logged = userService.login(request);
-            return ResponseEntity.ok(logged);
+            LoginResponse response = userService.login(request);
+
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
