@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: microdesk-postgres
+    restart: unless-stopped
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/18/docker
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Europe/Bucharest
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  booking-service:
+    build: ./booking-service
+    container_name: microdesk-booking
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: ${BOOKING_DB_URL}
+      DB_USERNAME: ${BOOKING_DB_USERNAME}
+      DB_PASSWORD: ${BOOKING_DB_PASSWORD}
+    ports:
+      - "8081:8080"
+
+  notification-service:
+    build: ./notification-service
+    container_name: microdesk-notification
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: ${NOTIFICATION_DB_URL}
+      DB_USERNAME: ${NOTIFICATION_DB_USERNAME}
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    ports:
+      - "8082:8080"
