@@ -34,6 +34,11 @@ public class ReservationService {
         Desk desk = deskRepository.findByIdAndActiveTrue(request.getDeskId())
                 .orElseThrow(() -> new IllegalArgumentException("Desk not found or inactive"));
 
+        if (reservationRepository.existsByUserIdAndDayAndStatus(
+                userId, request.getDay(), ReservationStatus.ACTIVE)) {
+            throw new IllegalStateException("You already have an active reservation for that day");
+        }
+
         if (reservationRepository.existsByDeskIdAndDayAndStatus(
                 request.getDeskId(), request.getDay(), ReservationStatus.ACTIVE)) {
             throw new IllegalStateException("Desk is already reserved for that day");
