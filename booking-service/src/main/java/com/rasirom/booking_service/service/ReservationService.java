@@ -1,5 +1,6 @@
 package com.rasirom.booking_service.service;
 
+import com.rasirom.booking_service.dto.CancelReservationRequest;
 import com.rasirom.booking_service.dto.CreateReservationRequest;
 import com.rasirom.booking_service.dto.ReservationResponse;
 import com.rasirom.booking_service.model.Desk;
@@ -11,6 +12,8 @@ import com.rasirom.booking_service.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,6 +53,43 @@ public class ReservationService {
         reservation.setDay(request.getDay());
 
         Reservation saved = reservationRepository.save(reservation);
+
+        return new ReservationResponse(
+                saved.getId(),
+                userId,
+                desk.getId(),
+                desk.getDeskNumber(),
+                desk.getRoomNumber(),
+                desk.getFloor(),
+                saved.getDay(),
+                saved.getStatus(),
+                saved.getCreatedAt()
+        );
+    }
+
+    @Transactional
+    public ReservationResponse cancel(Long userId, Long reservationId, CancelReservationRequest request) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+
+        if (!reservation.getUser().getId().equals(userId)) {
+            throw new SecurityException("You are not allowed to cancel this reservation");
+        }
+
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new IllegalStateException("Reservation is already cancelled");
+        }
+
+        if (!reservation.getDay().isAfter(LocalDate.now())) {
+            throw new IllegalStateException("Only future reservations can be cancelled");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        reservation.setCancelledAt(LocalDateTime.now());
+        reservation.setCancellationReason(request.getReason());
+
+        Reservation saved = reservationRepository.save(reservation);
+        Desk desk = saved.getDesk();
 
         return new ReservationResponse(
                 saved.getId(),
