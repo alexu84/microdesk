@@ -48,7 +48,7 @@ public class UserService {
         existing.setLastLoginAt(LocalDateTime.now());
         userRepository.save(existing);
 
-        String token = jwtUtil.generateToken(existing.getEmail());
+        String token = jwtUtil.generateToken(existing.getEmail(), existing.getId());
 
         return new LoginResponse(token, existing.getEmail(), existing.getFirstName(), existing.getLastName());
     }
