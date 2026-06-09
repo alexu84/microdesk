@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/reservations")
@@ -19,6 +20,12 @@ public class ReservationController {
 
     public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ReservationResponse>> getMyReservations(Principal principal) {
+        Long userId = (Long) ((UsernamePasswordAuthenticationToken) principal).getDetails();
+        return ResponseEntity.ok(reservationService.getMyReservations(userId));
     }
 
     @PostMapping

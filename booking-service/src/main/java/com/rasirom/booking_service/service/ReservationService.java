@@ -11,6 +11,9 @@ import com.rasirom.booking_service.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class ReservationService {
 
@@ -54,5 +57,21 @@ public class ReservationService {
                 saved.getStatus(),
                 saved.getCreatedAt()
         );
+    }
+
+    public List<ReservationResponse> getMyReservations(Long userId) {
+        return reservationRepository.findByUserIdOrderByDayDesc(userId).stream()
+                .map(r -> new ReservationResponse(
+                        r.getId(),
+                        r.getUser().getId(),
+                        r.getDesk().getId(),
+                        r.getDesk().getDeskNumber(),
+                        r.getDesk().getRoomNumber(),
+                        r.getDesk().getFloor(),
+                        r.getDay(),
+                        r.getStatus(),
+                        r.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
     }
 }
