@@ -37,4 +37,4 @@ jwt:
 
 kafka:
   topics:
-    reservation-created: ${KAFKA_TOPIC_RESERVATION_CREATED:reservation.created}
+    reservations: ${KAFKA_TOPIC_RESERVATIONS:reservations}

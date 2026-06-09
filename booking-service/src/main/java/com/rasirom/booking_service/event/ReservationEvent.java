@@ -3,8 +3,9 @@ package com.rasirom.booking_service.event;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class ReservationCreatedEvent {
+public class ReservationEvent {
 
+    private ReservationEventType eventType;
     private Long reservationId;
     private Long userId;
     private Long deskId;
@@ -14,11 +15,12 @@ public class ReservationCreatedEvent {
     private LocalDate day;
     private LocalDateTime createdAt;
 
-    public ReservationCreatedEvent() {}
+    public ReservationEvent() {}
 
-    public ReservationCreatedEvent(Long reservationId, Long userId, Long deskId,
-                                   Integer deskNumber, String roomNumber, Integer floor,
-                                   LocalDate day, LocalDateTime createdAt) {
+    public ReservationEvent(ReservationEventType eventType, Long reservationId, Long userId,
+                            Long deskId, Integer deskNumber, String roomNumber, Integer floor,
+                            LocalDate day, LocalDateTime createdAt) {
+        this.eventType = eventType;
         this.reservationId = reservationId;
         this.userId = userId;
         this.deskId = deskId;
@@ -28,6 +30,9 @@ public class ReservationCreatedEvent {
         this.day = day;
         this.createdAt = createdAt;
     }
+
+    public ReservationEventType getEventType() { return eventType; }
+    public void setEventType(ReservationEventType eventType) { this.eventType = eventType; }
 
     public Long getReservationId() { return reservationId; }
     public void setReservationId(Long reservationId) { this.reservationId = reservationId; }
@@ -53,3 +58,4 @@ public class ReservationCreatedEvent {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
+

@@ -3,7 +3,8 @@ package com.rasirom.booking_service.service;
 import com.rasirom.booking_service.dto.CancelReservationRequest;
 import com.rasirom.booking_service.dto.CreateReservationRequest;
 import com.rasirom.booking_service.dto.ReservationResponse;
-import com.rasirom.booking_service.event.ReservationCreatedEvent;
+import com.rasirom.booking_service.event.ReservationEvent;
+import com.rasirom.booking_service.event.ReservationEventType;
 import com.rasirom.booking_service.model.Desk;
 import com.rasirom.booking_service.model.Reservation;
 import com.rasirom.booking_service.model.ReservationStatus;
@@ -26,19 +27,19 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final DeskRepository deskRepository;
     private final UserRepository userRepository;
-    private final KafkaTemplate<String, ReservationCreatedEvent> kafkaTemplate;
-    private final String reservationCreatedTopic;
+    private final KafkaTemplate<String, ReservationEvent> kafkaTemplate;
+    private final String reservationsTopic;
 
     public ReservationService(ReservationRepository reservationRepository,
                               DeskRepository deskRepository,
                               UserRepository userRepository,
-                              KafkaTemplate<String, ReservationCreatedEvent> kafkaTemplate,
-                              @Value("${kafka.topics.reservation-created}") String reservationCreatedTopic) {
+                              KafkaTemplate<String, ReservationEvent> kafkaTemplate,
+                              @Value("${kafka.topics.reservations}") String reservationsTopic) {
         this.reservationRepository = reservationRepository;
         this.deskRepository = deskRepository;
         this.userRepository = userRepository;
         this.kafkaTemplate = kafkaTemplate;
-        this.reservationCreatedTopic = reservationCreatedTopic;
+        this.reservationsTopic = reservationsTopic;
     }
 
     @Transactional
@@ -63,8 +64,9 @@ public class ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
 
-        kafkaTemplate.send(reservationCreatedTopic, String.valueOf(saved.getId()),
-                new ReservationCreatedEvent(
+        kafkaTemplate.send(reservationsTopic, String.valueOf(saved.getId()),
+                new ReservationEvent(
+                        ReservationEventType.CREATED,
                         saved.getId(), userId, desk.getId(),
                         desk.getDeskNumber(), desk.getRoomNumber(), desk.getFloor(),
                         saved.getDay(), saved.getCreatedAt()
@@ -106,6 +108,14 @@ public class ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
         Desk desk = saved.getDesk();
+
+        kafkaTemplate.send(reservationsTopic, String.valueOf(saved.getId()),
+                new ReservationEvent(
+                        ReservationEventType.CANCELLED,
+                        saved.getId(), userId, desk.getId(),
+                        desk.getDeskNumber(), desk.getRoomNumber(), desk.getFloor(),
+                        saved.getDay(), saved.getCreatedAt()
+                ));
 
         return new ReservationResponse(
                 saved.getId(),
