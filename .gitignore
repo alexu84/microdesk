@@ -2,4 +2,5 @@
 data/
 run-pgsql.sh
 run-pgadmin.sh
+run-kafka.sh
 create-pgsql-users.sql
