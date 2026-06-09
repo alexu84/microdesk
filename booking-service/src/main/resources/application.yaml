@@ -34,3 +34,7 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: 86400000
+
+kafka:
+  topics:
+    reservation-created: ${KAFKA_TOPIC_RESERVATION_CREATED:reservation.created}
