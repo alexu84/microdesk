@@ -38,3 +38,6 @@ jwt:
 kafka:
   topics:
     reservations: ${KAFKA_TOPIC_RESERVATIONS:reservations}
+
+services:
+  notification-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8082}
