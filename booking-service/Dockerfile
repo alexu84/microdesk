@@ -5,7 +5,8 @@ COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 COPY src src
-RUN chmod +x gradlew && ./gradlew bootJar -x test
+RUN chmod +x gradlew && ./gradlew test
+RUN ./gradlew bootJar -x test
 
 FROM bellsoft/liberica-openjre-alpine:21
 WORKDIR /app
