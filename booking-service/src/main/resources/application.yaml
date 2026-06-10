@@ -45,3 +45,18 @@ outbox:
 
 services:
   notification-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8082}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      notificationService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+  retry:
+    instances:
+      notificationService:
+        max-attempts: 3
+        wait-duration: 500ms
