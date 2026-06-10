@@ -39,5 +39,9 @@ kafka:
   topics:
     reservations: ${KAFKA_TOPIC_RESERVATIONS:reservations}
 
+outbox:
+  relay:
+    fixed-delay-ms: 5000
+
 services:
   notification-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8082}

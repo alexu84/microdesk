@@ -1,18 +1,20 @@
 package com.rasirom.booking_service.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rasirom.booking_service.dto.CancelReservationRequest;
 import com.rasirom.booking_service.dto.CreateReservationRequest;
 import com.rasirom.booking_service.dto.ReservationResponse;
 import com.rasirom.booking_service.event.ReservationEvent;
 import com.rasirom.booking_service.event.ReservationEventType;
 import com.rasirom.booking_service.model.Desk;
+import com.rasirom.booking_service.model.OutboxMessage;
 import com.rasirom.booking_service.model.Reservation;
 import com.rasirom.booking_service.model.ReservationStatus;
 import com.rasirom.booking_service.repository.DeskRepository;
+import com.rasirom.booking_service.repository.OutboxMessageRepository;
 import com.rasirom.booking_service.repository.ReservationRepository;
 import com.rasirom.booking_service.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,19 +29,19 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final DeskRepository deskRepository;
     private final UserRepository userRepository;
-    private final KafkaTemplate<String, ReservationEvent> kafkaTemplate;
-    private final String reservationsTopic;
+    private final OutboxMessageRepository outboxMessageRepository;
+    private final ObjectMapper objectMapper;
 
     public ReservationService(ReservationRepository reservationRepository,
                               DeskRepository deskRepository,
                               UserRepository userRepository,
-                              KafkaTemplate<String, ReservationEvent> kafkaTemplate,
-                              @Value("${kafka.topics.reservations}") String reservationsTopic) {
+                              OutboxMessageRepository outboxMessageRepository,
+                              ObjectMapper objectMapper) {
         this.reservationRepository = reservationRepository;
         this.deskRepository = deskRepository;
         this.userRepository = userRepository;
-        this.kafkaTemplate = kafkaTemplate;
-        this.reservationsTopic = reservationsTopic;
+        this.outboxMessageRepository = outboxMessageRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -64,13 +66,7 @@ public class ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
 
-        kafkaTemplate.send(reservationsTopic, String.valueOf(saved.getId()),
-                new ReservationEvent(
-                        ReservationEventType.CREATED,
-                        saved.getId(), userId, desk.getId(),
-                        desk.getDeskNumber(), desk.getRoomNumber(), desk.getFloor(),
-                        saved.getDay(), saved.getCreatedAt()
-                ));
+        saveOutboxMessage(ReservationEventType.CREATED, saved, desk, userId);
 
         return new ReservationResponse(
                 saved.getId(),
@@ -109,13 +105,7 @@ public class ReservationService {
         Reservation saved = reservationRepository.save(reservation);
         Desk desk = saved.getDesk();
 
-        kafkaTemplate.send(reservationsTopic, String.valueOf(saved.getId()),
-                new ReservationEvent(
-                        ReservationEventType.CANCELLED,
-                        saved.getId(), userId, desk.getId(),
-                        desk.getDeskNumber(), desk.getRoomNumber(), desk.getFloor(),
-                        saved.getDay(), saved.getCreatedAt()
-                ));
+        saveOutboxMessage(ReservationEventType.CANCELLED, saved, desk, userId);
 
         return new ReservationResponse(
                 saved.getId(),
@@ -144,5 +134,20 @@ public class ReservationService {
                         r.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    private void saveOutboxMessage(ReservationEventType eventType, Reservation reservation, Desk desk, Long userId) {
+        ReservationEvent event = new ReservationEvent(
+                eventType,
+                reservation.getId(), userId, desk.getId(),
+                desk.getDeskNumber(), desk.getRoomNumber(), desk.getFloor(),
+                reservation.getDay(), reservation.getCreatedAt()
+        );
+        try {
+            String payload = objectMapper.writeValueAsString(event);
+            outboxMessageRepository.save(new OutboxMessage(eventType.name(), payload));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize outbox payload", e);
+        }
     }
 }
