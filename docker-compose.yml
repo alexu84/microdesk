@@ -55,6 +55,21 @@ services:
       timeout: 5s
       retries: 5
 
+  pgadmin:
+    image: dpage/pgadmin4:9.11
+    container_name: microdesk-pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    ports:
+      - "8889:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: codemaster64bit@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: 123456
+      TZ: Europe/Bucharest
+
   booking-service:
     build: ./booking-service
     container_name: microdesk-booking
